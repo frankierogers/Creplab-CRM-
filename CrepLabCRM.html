@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrepLab LDN — CRM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#080808;--surface:#111111;--surface2:#1a1a1a;--border:#ffffff10;--border2:#ffffff1a;
+    --text:#f5f5f5;--muted:#666;--accent:#e8ff00;--accent2:#c8dc00;
+    --green:#22c77a;--red:#f44;--amber:#f0a030;--white:#fff;
+    --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  }
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5}
+  .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+  /* TOPBAR */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-text{font-size:15px;font-weight:600;letter-spacing:.5px}
+  .logo-text span{color:var(--accent)}
+  .tabs{display:flex;gap:2px}
+  .tab{padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);border-radius:6px;transition:all .15s;font-family:var(--font)}
+  .tab:hover{color:var(--text);background:#ffffff08}
+  .tab.on{color:var(--bg);background:var(--accent);font-weight:600}
+  .main{flex:1;overflow-y:auto;padding:20px}
+  .pg{display:none}.pg.on{display:block}
+
+  /* KPIS */
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .kpi-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .kpi.accent{background:#e8ff0012;border-color:#e8ff0030}
+  .kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;font-weight:500}
+  .kpi-val{font-size:24px;font-weight:600;line-height:1;letter-spacing:-.5px}
+  .kpi-sub{font-size:11px;color:var(--muted);margin-top:5px}
+  .kpi-val.lime{color:var(--accent)}.kpi-val.green{color:var(--green)}.kpi-val.amber{color:var(--amber)}.kpi-val.red{color:var(--red)}
+
+  /* CARDS */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+
+  /* TABLE */
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;padding:8px 10px;font-size:10px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
+  td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr.dr:hover td{background:#ffffff04}
+  .tot-row td{background:#1a1a1a;font-weight:600}
+  .mo-hdr td{background:#111;font-size:10px;font-weight:600;color:var(--accent);letter-spacing:.4px;padding:5px 10px;border-top:1px solid var(--border)}
+
+  /* BADGES */
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap;font-family:var(--mono)}
+  .b-premium{background:#1a1a00;color:#e8ff00;border:1px solid #e8ff0030}
+  .b-luxury{background:#001a2a;color:#5b8cf8;border:1px solid #3b6cf430}
+  .b-ultimate{background:#1a0a00;color:#f0a030;border:1px solid #f0a03030}
+  .b-sole{background:#0a1a0a;color:#22c77a;border:1px solid #22c77a30}
+  .b-done{background:#0d2e1a;color:#22c77a;border:1px solid #22c77a30}
+  .b-inprog{background:#2a1a00;color:#f0a030;border:1px solid #f0a03030}
+  .b-collected{background:#0d2e1a;color:#22c77a;border:1px solid #22c77a30}
+  .b-pending{background:#2a0d0d;color:#f06060;border:1px solid #f4444430}
+
+  /* FORM */
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+  .form-grid label{font-size:10px;color:var(--muted);display:block;margin-bottom:3px;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+  .form-grid input,.form-grid select,.form-grid textarea{width:100%;padding:8px 10px;font-size:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:var(--font);outline:none}
+  .form-grid input:focus,.form-grid select:focus{border-color:var(--accent)}
+  .form-grid select option{background:#1a1a1a}
+  .btn{padding:8px 16px;font-size:12px;font-weight:600;border:1px solid var(--border2);border-radius:7px;cursor:pointer;background:none;color:var(--text);font-family:var(--font)}
+  .btn-primary{background:var(--accent);color:#000;border-color:var(--accent)}
+  .btn-primary:hover{background:var(--accent2)}
+  .btn-xs{padding:3px 7px;font-size:10px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:none;color:var(--muted);font-family:var(--font)}
+  .btn-xs:hover{border-color:#f06060;color:#f06060}
+  .btn-sm{padding:5px 10px;font-size:11px;border:1px solid var(--border);border-radius:5px;cursor:pointer;background:none;color:var(--muted);font-family:var(--font)}
+  .btn-sm:hover{background:#ffffff08;color:var(--text)}
+
+  /* BAR */
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .bar-lbl{font-size:10px;color:var(--muted);width:90px;text-align:right;flex-shrink:0}
+  .bar-outer{flex:1;background:var(--surface2);border-radius:3px;height:14px;overflow:hidden}
+  .bar-inner{height:100%;border-radius:3px}
+  .bar-lime{background:var(--accent)}.bar-green{background:var(--green)}.bar-amber{background:var(--amber)}.bar-blue{background:#3b6cf4}
+  .bar-val{font-size:10px;font-family:var(--mono);width:40px;text-align:right}
+
+  /* INSIGHT */
+  .insight{font-size:12px;color:var(--muted);padding:9px 12px;border-left:2px solid var(--accent);margin-bottom:7px;line-height:1.6;border-radius:0 6px 6px 0;background:#e8ff0005}
+  .insight strong{color:var(--text)}
+  .insight.warn{border-left-color:var(--amber);background:#f0a03005}
+  .insight.good{border-left-color:var(--green);background:#22c77a05}
+  .insight.bad{border-left-color:var(--red);background:#f4444405}
+
+  /* MONTHLY REPORT */
+  .mo-report{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
+  .mo-report-hdr{background:#111;border-bottom:1px solid #e8ff0020;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+  .mo-report-title{font-size:14px;font-weight:600}
+  .mo-report-stats{display:flex;gap:20px}
+  .mo-stat{text-align:right}
+  .mo-stat-val{font-size:14px;font-weight:600;font-family:var(--mono)}
+  .mo-stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .mo-report-body{padding:16px 18px}
+
+  /* SERVICE PILLS */
+  .svc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .svc-pill{border-radius:8px;padding:10px 12px;text-align:center;cursor:pointer;border:1px solid var(--border);background:var(--surface2);transition:all .15s}
+  .svc-pill:hover{border-color:var(--accent)}
+  .svc-pill.selected{background:#e8ff0015;border-color:var(--accent)}
+  .svc-name{font-size:11px;font-weight:600}
+  .svc-price{font-size:13px;font-weight:600;color:var(--accent);font-family:var(--mono)}
+
+  .filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  .filter-row input,.filter-row select{padding:6px 10px;font-size:11px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:var(--font);outline:none}
+
+  .target-bar{background:var(--surface2);border-radius:6px;height:20px;overflow:hidden;margin-top:6px;position:relative}
+  .target-fill{height:100%;border-radius:6px;background:var(--accent);transition:width .5s ease}
+  .target-label{position:absolute;top:50%;right:8px;transform:translateY(-50%);font-size:10px;font-family:var(--mono);font-weight:600;color:#000;mix-blend-mode:difference}
+
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-text">CREPLAB <span>LDN</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" onclick="goTab('dash')">Dashboard</button>
+      <button class="tab" onclick="goTab('jobs')">Job log</button>
+      <button class="tab" onclick="goTab('monthly')">Monthly</button>
+      <button class="tab" onclick="goTab('report')">Monthly report</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="topbar-stats"></div>
+  </div>
+  <div class="main">
+    <div id="pg-dash" class="pg on"></div>
+    <div id="pg-jobs" class="pg"></div>
+    <div id="pg-monthly" class="pg"></div>
+    <div id="pg-report" class="pg"></div>
+  </div>
+</div>
+
+<script>
+const SERVICES=[
+  {id:'premium',name:'Premium Clean',price:25,color:'b-premium',desc:'Muddy but stain-free'},
+  {id:'luxury',name:'Luxury Clean',price:30,color:'b-luxury',desc:'Suede & deep stain'},
+  {id:'ultimate',name:'Ultimate Clean',price:35,color:'b-ultimate',desc:'Full interior & exterior'},
+  {id:'sole',name:'Sole Whitening',price:40,color:'b-sole',desc:'Luxury + UV treatment'},
+];
+
+const KEY='creplab_crm_v2';
+let SEED_DATA=[
+{id:1000,date:"15/06/2021",name:"Casey Applegarth",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1001,date:"15/06/2021",name:"@wsgc14",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Instagram",notes:"bank"},
+{id:1002,date:"15/06/2021",name:"Dan Sayer",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1003,date:"15/06/2021",name:"Aaron Dennison",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1004,date:"15/06/2021",name:"Dylan Edwards",trainer:"",service:"ultimate",qty:1,total:70,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1005,date:"15/06/2021",name:"Frankie Perkins",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1006,date:"15/06/2021",name:"Bill Williams",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1007,date:"15/06/2021",name:"@nathan10_",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Instagram",notes:""},
+{id:1008,date:"15/06/2021",name:"Macca",trainer:"",service:"ultimate",qty:5,total:150,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1009,date:"15/06/2021",name:"Elias mate",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1010,date:"15/06/2021",name:"James Butler",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1011,date:"15/06/2021",name:"James Butler",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Repeat",notes:"repeat"},
+{id:1012,date:"15/06/2021",name:"Perry Gibbs",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1013,date:"15/07/2021",name:"Craig",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1014,date:"15/07/2021",name:"Harvey",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1015,date:"15/07/2021",name:"Elias mate",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1016,date:"15/07/2021",name:"Emma (Joe\'s mum)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1017,date:"15/07/2021",name:"Emma (Joe\'s mum)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1018,date:"15/07/2021",name:"Perry Gibbs",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1019,date:"15/07/2021",name:"Wade (barber)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1020,date:"15/07/2021",name:"Alfie Steele",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1021,date:"15/07/2021",name:"Kainaat Mughal",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1022,date:"15/07/2021",name:"Marc Sewell",trainer:"",service:"ultimate",qty:3,total:100,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1023,date:"15/07/2021",name:"Elias mate",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1024,date:"15/07/2021",name:"Charlie (Frank cousin)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1025,date:"15/07/2021",name:"Wade",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1026,date:"15/07/2021",name:"@nathan10_",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Instagram",notes:""},
+{id:1027,date:"15/07/2021",name:"Kian Mardasian",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1028,date:"15/07/2021",name:"Elias Aunt",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:"inc 1 week break"},
+{id:1029,date:"15/08/2021",name:"Brad Nortey",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1030,date:"15/08/2021",name:"@xhannah.tg",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1031,date:"15/08/2021",name:"Frankie\'s sister work mate",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1032,date:"15/08/2021",name:"Wade",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1033,date:"15/09/2021",name:"Charlie Morris",trainer:"",service:"ultimate",qty:1,total:65,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1034,date:"15/09/2021",name:"Keysey (Dan Roger\'s mate)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1035,date:"15/09/2021",name:"Frank family friend",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1036,date:"15/09/2021",name:"Will Smyth",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1037,date:"15/09/2021",name:"Frank family (2x 270s)",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:"2 pairs"},
+{id:1038,date:"15/09/2021",name:"Frank barber worker",trainer:"",service:"ultimate",qty:1,total:90,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1039,date:"15/10/2021",name:"Tom Lockhart",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1040,date:"15/10/2021",name:"Tom Lockhart",trainer:"",service:"premium",qty:1,total:25,paid:"No",status:"Done",source:"Walk-in",notes:"paid £20"},
+{id:1041,date:"15/11/2021",name:"Ms Schoffren",trainer:"",service:"premium",qty:1,total:15,paid:"Yes",status:"Done",source:"Walk-in",notes:"Black Friday"},
+{id:1042,date:"15/11/2021",name:"Faye\'s Brother",trainer:"",service:"premium",qty:1,total:15,paid:"Yes",status:"Done",source:"Walk-in",notes:"Black Friday"},
+{id:1043,date:"15/11/2021",name:"Bill Karby",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:"Black Friday"},
+{id:1044,date:"15/12/2021",name:"James Imray",trainer:"",service:"ultimate",qty:1,total:45,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1045,date:"15/12/2021",name:"Ms Jordan",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1046,date:"15/12/2021",name:"Faye\'s Brother",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1047,date:"15/12/2021",name:"Fred\'s mate",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1048,date:"15/12/2021",name:"@mishtrap.ggl",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1049,date:"15/12/2021",name:"Frankie Jubber",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1050,date:"15/01/2022",name:"Faye\'s boyfriend",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1051,date:"15/01/2022",name:"Stephen (Frank family friend)",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1052,date:"15/01/2022",name:"Callum Sewell",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1053,date:"15/01/2022",name:"Tyler (car tyre guy)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1054,date:"15/01/2022",name:"Kane Taylor",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1055,date:"15/01/2022",name:"Jorge Rabacca",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1056,date:"15/01/2022",name:"My Dad",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:"£10 cash + £15 shrink wrap"},
+{id:1057,date:"15/01/2022",name:"Louie Ling",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:"92nd order"},
+{id:1058,date:"15/01/2022",name:"Wade",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1059,date:"15/02/2022",name:"Matt Taylor",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1060,date:"15/02/2022",name:"Michael Mbonzo",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1061,date:"15/02/2022",name:"Casey",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1062,date:"15/02/2022",name:"Uncle Harry",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1063,date:"15/02/2022",name:"Tyler Rogers",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1064,date:"15/02/2022",name:"Brad Jackson",trainer:"",service:"ultimate",qty:1,total:45,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1065,date:"15/03/2022",name:"Harry Rippe",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:"not confirmed paid"},
+{id:1066,date:"15/03/2022",name:"Jordan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1067,date:"15/03/2022",name:"Mitchell Crouch",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1068,date:"15/03/2022",name:"Casey Edwards",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1069,date:"15/03/2022",name:"Louie Ling",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1070,date:"15/03/2022",name:"Charlie Jubber",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1071,date:"15/03/2022",name:"Rio",trainer:"",service:"premium",qty:1,total:10,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1072,date:"15/04/2022",name:"Jake Gillham",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1073,date:"15/04/2022",name:"Noah Hughes",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1074,date:"15/04/2022",name:"George Mullane\'s Mum",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1075,date:"15/04/2022",name:"Bill Karby",trainer:"",service:"premium",qty:1,total:15,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1076,date:"15/04/2022",name:"Ms Schoffren",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:"118th order"},
+{id:1077,date:"15/04/2022",name:"Podge",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1078,date:"15/04/2022",name:"Regan Pownceby",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1079,date:"15/04/2022",name:"@kcfboxing",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1080,date:"15/05/2022",name:"Alfie Karby",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1081,date:"15/05/2022",name:"Harley Noad",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1082,date:"15/05/2022",name:"Frank\'s sister mate",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Referral",notes:""},
+{id:1083,date:"15/06/2022",name:"Cal Sewell",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1084,date:"15/06/2022",name:"Freddie Huntley",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1085,date:"15/06/2022",name:"Wade Clayden",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1086,date:"15/06/2022",name:"Frankie Callahan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1087,date:"15/06/2022",name:"Tel Monks",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1088,date:"15/06/2022",name:"Boony",trainer:"",service:"premium",qty:1,total:10,paid:"Yes",status:"Done",source:"Walk-in",notes:"136th order"},
+{id:1089,date:"15/06/2022",name:"George Bulmer",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1090,date:"15/07/2022",name:"Elias",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1091,date:"15/07/2022",name:"Elias",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Repeat",notes:"repeat"},
+{id:1092,date:"15/07/2022",name:"Megan Whymark",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1093,date:"15/08/2022",name:"Harry Rippe",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1094,date:"15/08/2022",name:"Louie Ling",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1095,date:"15/08/2022",name:"Kane & James",trainer:"",service:"ultimate",qty:7,total:210,paid:"Yes",status:"Done",source:"Walk-in",notes:"14 pairs"},
+{id:1096,date:"15/09/2022",name:"Connor Mitchell",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1097,date:"15/09/2022",name:"Fred\'s trainers",trainer:"",service:"premium",qty:1,total:10,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1098,date:"15/09/2022",name:"Jake Gillham",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1099,date:"15/09/2022",name:"Lara Welch",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:"got £20"},
+{id:1100,date:"15/10/2022",name:"Harry Rippe",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1101,date:"15/11/2022",name:"Mason",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1102,date:"15/11/2022",name:"Ola (Elias brought)",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1103,date:"15/11/2022",name:"Henry Tutton",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1104,date:"15/11/2022",name:"Ola",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1105,date:"15/11/2022",name:"Robbie Lee",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1106,date:"15/11/2022",name:"Frank Callahan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:"170 orders"},
+{id:1107,date:"15/12/2022",name:"Georgie Curd",trainer:"",service:"premium",qty:1,total:15,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1108,date:"15/12/2022",name:"Louie Ling mate",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1109,date:"15/12/2022",name:"Mitch\'s Dad",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1110,date:"15/12/2022",name:"Frank\'s cousin",trainer:"",service:"premium",qty:1,total:10,paid:"Yes",status:"Done",source:"Walk-in",notes:"NY Deal"},
+{id:1111,date:"15/12/2022",name:"My Mum",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1112,date:"15/12/2022",name:"George Bulmer",trainer:"",service:"premium",qty:1,total:10,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1113,date:"15/01/2023",name:"Frankie Harrison",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:"1 pair"},
+{id:1114,date:"15/01/2023",name:"Nez",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:"2 pairs NYE deal"},
+{id:1115,date:"15/01/2023",name:"Harry Rippe",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1116,date:"15/01/2023",name:"Bill Thursting mate",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1117,date:"15/01/2023",name:"Connor Mitchell GF",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1118,date:"15/01/2023",name:"Jorge Rabaca",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1119,date:"15/02/2023",name:"Montana",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1120,date:"15/02/2023",name:"Cameron",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:"186th order"},
+{id:1121,date:"15/02/2023",name:"Dan Sayer",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1122,date:"15/02/2023",name:"Alfie",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1123,date:"15/02/2023",name:"Alfie Harman",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1124,date:"15/02/2023",name:"Joe Gray GF",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1125,date:"15/03/2023",name:"Elias",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1126,date:"15/03/2023",name:"Wade",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1127,date:"15/03/2023",name:"Alfie",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1128,date:"15/03/2023",name:"Alfie",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1129,date:"15/03/2023",name:"Elias",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Repeat",notes:"repeat"},
+{id:1130,date:"15/03/2023",name:"Wayde",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1131,date:"15/04/2023",name:"Bill",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:"not in pot"},
+{id:1132,date:"15/04/2023",name:"@cz.15th",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1133,date:"15/04/2023",name:"Joe",trainer:"",service:"ultimate",qty:1,total:40,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1134,date:"15/05/2023",name:"Harry Rippe",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1135,date:"15/05/2023",name:"Tay\'s Mate",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1136,date:"15/05/2023",name:"Connor",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1137,date:"15/05/2023",name:"Fred\'s mate",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1138,date:"15/05/2023",name:"Freddie Huntley",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1139,date:"15/05/2023",name:"Frank work mate",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1140,date:"15/05/2023",name:"Mitchell Fallows",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1141,date:"15/05/2023",name:"Frank Work mate",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:"211th order"},
+{id:1142,date:"15/05/2023",name:"Billy Mattocks",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1143,date:"15/05/2023",name:"Frank\'s neighbour",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1144,date:"15/05/2023",name:"Louie Ling DJ mate",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1145,date:"15/05/2023",name:"George Mullane",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:"x2"},
+{id:1146,date:"15/05/2023",name:"Henry Tutton",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1147,date:"15/05/2023",name:"Ryan Holeyman",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1148,date:"15/06/2023",name:"Millie Jones",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1149,date:"15/06/2023",name:"Luke Joy",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1150,date:"15/06/2023",name:"Frankie Lambert",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1151,date:"15/06/2023",name:"Berna",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1152,date:"15/06/2023",name:"Jorge Rabaca",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1153,date:"15/06/2023",name:"Podge",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1154,date:"15/06/2023",name:"Ryan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1155,date:"15/06/2023",name:"Wayde",trainer:"",service:"ultimate",qty:1,total:45,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1156,date:"15/06/2023",name:"Joey (Mazos mate)",trainer:"",service:"ultimate",qty:4,total:125,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1157,date:"15/06/2023",name:"Ryan Jones (RJ Skips)",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1158,date:"15/06/2023",name:"Casey Edwards",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1159,date:"15/07/2023",name:"Sam Murray",trainer:"",service:"ultimate",qty:1,total:45,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1160,date:"15/07/2023",name:"Glen (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1161,date:"15/07/2023",name:"Nathan (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1162,date:"15/07/2023",name:"Kian",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1163,date:"15/07/2023",name:"Glen (Frank Work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1164,date:"15/07/2023",name:"Casey Edwards",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1165,date:"15/07/2023",name:"Casey\'s mate",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1166,date:"15/07/2023",name:"RJ Skips",trainer:"",service:"ultimate",qty:3,total:100,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1167,date:"15/07/2023",name:"Callum Sewell",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1168,date:"15/07/2023",name:"Mason Hughes",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:"pay after Ibiza"},
+{id:1169,date:"15/07/2023",name:"Ryan Holeyman",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1170,date:"15/07/2023",name:"Jake Gilham",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1171,date:"15/07/2023",name:"Noah Hughes",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1172,date:"15/07/2023",name:"Tom Lockhart",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1173,date:"15/07/2023",name:"Jack Hazeltine",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1174,date:"15/08/2023",name:"Joey",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1175,date:"15/08/2023",name:"Jay (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1176,date:"15/08/2023",name:"Elias",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1177,date:"15/08/2023",name:"Wayde",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1178,date:"15/08/2023",name:"Cal",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1179,date:"15/08/2023",name:"Hannah",trainer:"",service:"premium",qty:1,total:10,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1180,date:"15/08/2023",name:"Jay (Frank Work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1181,date:"15/08/2023",name:"Matt (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1182,date:"15/08/2023",name:"Liam Polston",trainer:"",service:"ultimate",qty:1,total:70,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1183,date:"15/08/2023",name:"Harry Rippe",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1184,date:"15/08/2023",name:"Dan Sayer",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1185,date:"15/09/2023",name:"Casey",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1186,date:"15/09/2023",name:"Richie",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1187,date:"15/09/2023",name:"Nathan",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1188,date:"15/09/2023",name:"Stephen",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1189,date:"15/09/2023",name:"Alfie Coshell",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1190,date:"15/09/2023",name:"5x Charlie",trainer:"",service:"ultimate",qty:3,total:100,paid:"Yes",status:"Done",source:"Walk-in",notes:"5 pairs"},
+{id:1191,date:"15/09/2023",name:"Zak van",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1192,date:"15/09/2023",name:"Michael",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1193,date:"15/09/2023",name:"Dan Nez",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1194,date:"15/09/2023",name:"Bil mate",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1195,date:"15/09/2023",name:"Lincoln Fred mate",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1196,date:"15/09/2023",name:"Hugo (insta)",trainer:"",service:"ultimate",qty:1,total:85,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1197,date:"15/10/2023",name:"Sam Townsend",trainer:"",service:"ultimate",qty:1,total:90,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1198,date:"15/10/2023",name:"Matt (work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1199,date:"15/10/2023",name:"Bill Williams",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1200,date:"15/10/2023",name:"Milly Jones dad",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1201,date:"15/10/2023",name:"Reni (insta)",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1202,date:"15/10/2023",name:"Andy (work)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1203,date:"15/10/2023",name:"Casey",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1204,date:"15/10/2023",name:"Lenny Clifford",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1205,date:"15/10/2023",name:"Alfie Cook",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1206,date:"15/10/2023",name:"Joey",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1207,date:"15/10/2023",name:"Mike",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1208,date:"15/10/2023",name:"Rippe mate",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1209,date:"15/10/2023",name:"Lola",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1210,date:"15/10/2023",name:"Gunter",trainer:"",service:"premium",qty:1,total:0,paid:"Yes",status:"Done",source:"Walk-in",notes:"5 free cleans"},
+{id:1211,date:"15/11/2023",name:"Cemz",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1212,date:"15/11/2023",name:"Glen (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1213,date:"15/11/2023",name:"Sophie",trainer:"",service:"premium",qty:1,total:26,paid:"Yes",status:"Done",source:"Walk-in",notes:"£13 postage"},
+{id:1214,date:"15/11/2023",name:"HL",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1215,date:"15/11/2023",name:"Elias",trainer:"",service:"premium",qty:1,total:0,paid:"Yes",status:"Done",source:"Walk-in",notes:"3 free cleans"},
+{id:1216,date:"15/11/2023",name:"Cosgrave Cleaning",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1217,date:"15/11/2023",name:"Nathan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1218,date:"15/11/2023",name:"Harry Rippe",trainer:"",service:"ultimate",qty:1,total:70,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1219,date:"15/11/2023",name:"Elias mate",trainer:"",service:"ultimate",qty:5,total:150,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1220,date:"15/11/2023",name:"Kev",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1221,date:"15/11/2023",name:"Connor Mitchell",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1222,date:"15/11/2023",name:"Wayde Clayden",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1223,date:"15/12/2023",name:"Ethan (insta shipped)",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1224,date:"15/12/2023",name:"Cass",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:"BF Deal"},
+{id:1225,date:"15/12/2023",name:"Connor Mitchell",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:"BF Deal"},
+{id:1226,date:"15/12/2023",name:"Andy (Frank Work)",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:"BF Deal"},
+{id:1227,date:"15/12/2023",name:"DP (Frank Snap)",trainer:"",service:"ultimate",qty:3,total:100,paid:"Yes",status:"Done",source:"Walk-in",notes:"BF Deal"},
+{id:1228,date:"15/12/2023",name:"Harry Rippe mate",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1229,date:"15/12/2023",name:"Sam Bridge dad",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1230,date:"15/12/2023",name:"Albie Porter",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1231,date:"15/12/2023",name:"Glen (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1232,date:"15/12/2023",name:"Jake (Lia Boyfriend)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1233,date:"15/12/2023",name:"Dan Sayer",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1234,date:"15/12/2023",name:"Josh Aukers",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1235,date:"15/12/2023",name:"Eleanor",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1236,date:"15/12/2023",name:"Casey Edwards",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1237,date:"15/12/2023",name:"Alex Foneal",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1238,date:"15/12/2023",name:"H__247 (insta)",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1239,date:"15/12/2023",name:"Dan Sayer",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Repeat",notes:"repeat"},
+{id:1240,date:"15/12/2023",name:"Bill Karby",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1241,date:"15/12/2023",name:"Charlie Hampton",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1242,date:"15/12/2023",name:"Jack Botha",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1243,date:"15/12/2023",name:"Paige (paxoxo_)",trainer:"",service:"ultimate",qty:1,total:55,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1244,date:"15/01/2025",name:"Paige BF (paxoxo_)",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1245,date:"15/01/2025",name:"Perry Gibbs",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1246,date:"15/01/2025",name:"Jay Thomas",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1247,date:"15/01/2025",name:"Sam Townsend",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1248,date:"15/01/2025",name:"Joe Gray",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1249,date:"15/01/2025",name:"Jamil.mutz",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:"£10 postage"},
+{id:1250,date:"15/01/2025",name:"Glen (Frank Work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1251,date:"15/01/2025",name:"Dylan Edwards",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1252,date:"15/01/2025",name:"Matt (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1253,date:"15/01/2025",name:"Sxmia__x",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1254,date:"15/01/2025",name:"Lee Bantz",trainer:"",service:"ultimate",qty:1,total:65,paid:"Yes",status:"Done",source:"Walk-in",notes:"£13 postage"},
+{id:1255,date:"15/01/2025",name:"Ryan Holeyman",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1256,date:"15/01/2025",name:"B3",trainer:"",service:"ultimate",qty:4,total:110,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1257,date:"15/01/2025",name:"Jay Thomas",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Repeat",notes:"repeat"},
+{id:1258,date:"15/01/2025",name:"Dan Sayer",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1259,date:"15/01/2025",name:"George Bulmer",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1260,date:"15/01/2025",name:"Matt (work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1261,date:"15/02/2025",name:"Stu Gray",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1262,date:"15/02/2025",name:"Stephen Brundson",trainer:"",service:"ultimate",qty:1,total:80,paid:"No",status:"Done",source:"Walk-in",notes:"to collect"},
+{id:1263,date:"15/02/2025",name:"Harry Rippe mate",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1264,date:"15/02/2025",name:"Josh.keeble",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1265,date:"15/02/2025",name:"DJ just in case (bag)",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1266,date:"15/02/2025",name:"Andy (Frank work)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1267,date:"15/02/2025",name:"Sukh Sanghu",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1268,date:"15/02/2025",name:"Harry Rippe mate GF",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1269,date:"15/02/2025",name:"Zsa (arch work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1270,date:"15/02/2025",name:"Casey\'s Mum",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:"to collect"},
+{id:1271,date:"15/02/2025",name:"Tommy Griff",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1272,date:"15/02/2025",name:"Sam Mason (Faye\'s BF)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1273,date:"15/02/2025",name:"Dan Sayer",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1274,date:"15/02/2025",name:"Dev (Bulphan)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1275,date:"15/02/2025",name:"Liam Polston",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1276,date:"15/02/2025",name:"Charlie Edmead",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1277,date:"15/02/2025",name:"Matt GF mate (referred)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1278,date:"15/02/2025",name:"Jay",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1279,date:"15/02/2025",name:"Anton",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1280,date:"15/03/2025",name:"Elias mate x4",trainer:"",service:"ultimate",qty:4,total:110,paid:"Yes",status:"Done",source:"Referral",notes:"4 pairs"},
+{id:1281,date:"15/03/2025",name:"Cass",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1282,date:"15/03/2025",name:"Eleanor",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1283,date:"15/03/2025",name:"Matt",trainer:"",service:"ultimate",qty:1,total:55,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1284,date:"15/03/2025",name:"Tyler Rogers",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1285,date:"15/03/2025",name:"Cob Delaney (Gucci bag)",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:"bag clean"},
+{id:1286,date:"15/03/2025",name:"Kenzie",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1287,date:"15/03/2025",name:"Wayde",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1288,date:"15/03/2025",name:"Ines Mecherfi (bag)",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:"bag clean, paid arch"},
+{id:1289,date:"15/03/2025",name:"Joey",trainer:"",service:"ultimate",qty:6,total:180,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1290,date:"15/03/2025",name:"Frankie Stringer",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1291,date:"15/03/2025",name:"Louie Smith",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1292,date:"15/03/2025",name:"Elias mate",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1293,date:"15/03/2025",name:"Charlie Morris",trainer:"",service:"ultimate",qty:4,total:135,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1294,date:"15/03/2025",name:"Billyboy Lambert",trainer:"",service:"ultimate",qty:1,total:70,paid:"Yes",status:"Done",source:"Walk-in",notes:"paid arch"},
+{id:1295,date:"15/03/2025",name:"Connor",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1296,date:"15/03/2025",name:"Alfie Freeman",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1297,date:"15/04/2025",name:"Nathan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1298,date:"15/04/2025",name:"Casey",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1299,date:"15/04/2025",name:"Sam Bridge",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1300,date:"15/04/2025",name:"Ola",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1301,date:"15/04/2025",name:"Kevin Mitchell",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1302,date:"15/04/2025",name:"Jack",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1303,date:"15/04/2025",name:"o.rayment05",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1304,date:"15/04/2025",name:"Ben Walkner",trainer:"",service:"ultimate",qty:4,total:130,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1305,date:"15/04/2025",name:"Samgundaa",trainer:"",service:"ultimate",qty:1,total:70,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1306,date:"15/04/2025",name:"Kev",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1307,date:"15/04/2025",name:"Wayde",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1308,date:"15/04/2025",name:"Sam Bridge mate",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1309,date:"15/04/2025",name:"Bill Thursting",trainer:"",service:"premium",qty:1,total:25,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1310,date:"15/04/2025",name:"Gunter",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1311,date:"15/04/2025",name:"Freya Tomlin",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1312,date:"15/04/2025",name:"Craig Wren",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1313,date:"15/04/2025",name:"Sol (Frank work)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1314,date:"15/04/2025",name:"Michael",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1315,date:"15/05/2025",name:"Dale (Frank work)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1316,date:"15/05/2025",name:"Louie\'s brother",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1317,date:"15/05/2025",name:"George Bulmer",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1318,date:"15/05/2025",name:"Mike Faulkner",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1319,date:"15/05/2025",name:"Bill Karby",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1320,date:"15/05/2025",name:"Landdem",trainer:"",service:"ultimate",qty:4,total:130,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1321,date:"15/05/2025",name:"Harry Bull",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1322,date:"15/05/2025",name:"Sam Bridge Dad",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1323,date:"15/05/2025",name:"Glen",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1324,date:"15/05/2025",name:"Casey Applegarth",trainer:"",service:"ultimate",qty:1,total:90,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1325,date:"15/05/2025",name:"Sean Brown",trainer:"",service:"ultimate",qty:3,total:100,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1326,date:"15/05/2025",name:"Mike Hasini (Towie)",trainer:"",service:"premium",qty:1,total:0,paid:"Yes",status:"Done",source:"Walk-in",notes:"freebie"},
+{id:1327,date:"15/05/2025",name:"Podge",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1328,date:"15/06/2025",name:"Tai Daniels",trainer:"",service:"ultimate",qty:1,total:65,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1329,date:"15/06/2025",name:"Aaron Childs",trainer:"",service:"ultimate",qty:1,total:55,paid:"No",status:"Done",source:"Walk-in",notes:"to collect"},
+{id:1330,date:"15/06/2025",name:"Archie Taylor",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1331,date:"15/06/2025",name:"Tay.Cole",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1332,date:"15/06/2025",name:"Dan (Frank work)",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1333,date:"15/06/2025",name:"Martin Faulkner",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1334,date:"15/06/2025",name:"Mason (83)",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1335,date:"15/06/2025",name:"C.Del",trainer:"",service:"ultimate",qty:1,total:90,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1336,date:"15/06/2025",name:"Cass",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1337,date:"15/06/2025",name:"Joe Palmer",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1338,date:"15/06/2025",name:"Ethan.mc",trainer:"",service:"luxury",qty:1,total:30,paid:"No",status:"Done",source:"Walk-in",notes:"to collect"},
+{id:1339,date:"15/06/2025",name:"Neil (Frank Dad\'s mate)",trainer:"",service:"ultimate",qty:1,total:65,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1340,date:"15/06/2025",name:"Corley (Frank Work)",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1341,date:"15/06/2025",name:"Frankie Payne",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1342,date:"15/06/2025",name:"Wayde",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1343,date:"15/06/2025",name:"Rocky (Tay\'s mate)",trainer:"",service:"ultimate",qty:17,total:500,paid:"Yes",status:"Done",source:"Referral",notes:"big job"},
+{id:1344,date:"15/06/2025",name:"Casey",trainer:"",service:"ultimate",qty:1,total:40,paid:"No",status:"Done",source:"Walk-in",notes:"to collect"},
+{id:1345,date:"15/06/2025",name:"Tee1Up",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1346,date:"15/07/2025",name:"HL (Harry Lamey)",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1347,date:"15/07/2025",name:"Freddie Huntley",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1348,date:"15/07/2025",name:"Jalen Davis",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:"bank"},
+{id:1349,date:"15/07/2025",name:"Aaron Childs",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1350,date:"15/07/2025",name:"Tay Mate",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Referral",notes:"bank"},
+{id:1351,date:"15/07/2025",name:"Harry Rippe",trainer:"",service:"ultimate",qty:1,total:50,paid:"No",status:"Done",source:"Walk-in",notes:"to collect"},
+{id:1352,date:"15/07/2025",name:"Freddie Frazer",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Walk-in",notes:"bank"},
+{id:1353,date:"15/07/2025",name:"Kenzie",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1354,date:"15/07/2025",name:"Ryleigh",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1355,date:"15/07/2025",name:"Jay Steps",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:"bank"},
+{id:1356,date:"15/07/2025",name:"Hs9ngh",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1357,date:"15/07/2025",name:"Brad Jackson",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1358,date:"15/07/2025",name:"Ryleigh",trainer:"",service:"ultimate",qty:1,total:40,paid:"No",status:"Done",source:"Walk-in",notes:"to collect"},
+{id:1359,date:"15/07/2025",name:"Dave",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:"£10 in credit"},
+{id:1360,date:"15/07/2025",name:"Arch Gym guy",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:"add name"},
+{id:1361,date:"15/07/2025",name:"Kev Mitchell",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1362,date:"15/07/2025",name:"Tay mate Lauren",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Referral",notes:"bank"},
+{id:1363,date:"15/07/2025",name:"Callum Sewell",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:"Frank cash"},
+{id:1364,date:"15/07/2025",name:"Mason Defraites",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1365,date:"15/07/2025",name:"Brad Jackson",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Repeat",notes:"repeat"},
+{id:1366,date:"15/07/2025",name:"Jo (insta)",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Instagram",notes:"Frank cash, Instagram"},
+{id:1367,date:"15/07/2025",name:"JC Josh",trainer:"",service:"ultimate",qty:1,total:90,paid:"Yes",status:"Done",source:"Walk-in",notes:"Frank cash"},
+{id:1368,date:"15/07/2025",name:"Sam Murray",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:"Frank cash"},
+{id:1369,date:"15/07/2025",name:"Mitchell Crouch",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"5 pairs - need to get"},
+{id:1370,date:"15/07/2025",name:"Kayz",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1371,date:"15/08/2025",name:"Ryleigh",trainer:"",service:"ultimate",qty:1,total:90,paid:"Yes",status:"Done",source:"Walk-in",notes:"comparison bank"},
+{id:1372,date:"15/08/2025",name:"Paris",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1373,date:"15/08/2025",name:"Sasha (Tay\'s mate)",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Referral",notes:"bank"},
+{id:1374,date:"15/08/2025",name:"Andy",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1375,date:"15/08/2025",name:"Sam Bridge",trainer:"",service:"ultimate",qty:3,total:100,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1376,date:"15/08/2025",name:"Devon Perkins",trainer:"",service:"ultimate",qty:1,total:50,paid:"No",status:"Done",source:"Walk-in",notes:"comparison bank"},
+{id:1377,date:"15/08/2025",name:"Edilively",trainer:"",service:"luxury",qty:1,total:35,paid:"Yes",status:"Done",source:"Walk-in",notes:"posting via post"},
+{id:1378,date:"15/08/2025",name:"All aboutcake",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1379,date:"15/08/2025",name:"Joey",trainer:"",service:"ultimate",qty:4,total:130,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1380,date:"15/09/2025",name:"Harvey Durrant",trainer:"",service:"ultimate",qty:4,total:125,paid:"Yes",status:"Done",source:"Walk-in",notes:"comparison bank"},
+{id:1381,date:"15/09/2025",name:"John Kelly",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1382,date:"15/09/2025",name:"Zak (Andy\'s mate)",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1383,date:"15/09/2025",name:"C.Del",trainer:"",service:"ultimate",qty:1,total:90,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1384,date:"15/09/2025",name:"Sam Bridge",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1385,date:"15/09/2025",name:"Arch Birch",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1386,date:"15/09/2025",name:"Wayde (one free)",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1387,date:"15/09/2025",name:"C.del5",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1388,date:"15/09/2025",name:"Tay mate BF",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1389,date:"15/09/2025",name:"LVC",trainer:"",service:"ultimate",qty:1,total:55,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1390,date:"15/09/2025",name:"Ryan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1391,date:"15/09/2025",name:"Mr Style Setter",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1392,date:"15/09/2025",name:"George Bulmer",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1393,date:"15/09/2025",name:"Sam\'s Dad",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1394,date:"15/09/2025",name:"Perry Gibbs",trainer:"",service:"ultimate",qty:1,total:45,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1395,date:"15/10/2025",name:"Glen + Matt",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Walk-in",notes:"comp bank"},
+{id:1396,date:"15/10/2025",name:"Louie Chapman",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:"comp bank"},
+{id:1397,date:"15/10/2025",name:"Patricia",trainer:"",service:"ultimate",qty:6,total:165,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1398,date:"15/10/2025",name:"Star girl (insta)",trainer:"",service:"ultimate",qty:1,total:40,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1399,date:"15/10/2025",name:"Liam Polston",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1400,date:"15/10/2025",name:"Endurance",trainer:"",service:"ultimate",qty:4,total:120,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1401,date:"15/10/2025",name:"Sam",trainer:"",service:"ultimate",qty:3,total:100,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1402,date:"15/10/2025",name:"Insta girl",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1403,date:"15/11/2025",name:"Callum Sewell",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1404,date:"15/11/2025",name:"Harry Smith",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1405,date:"15/11/2025",name:"George Webb",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1406,date:"15/11/2025",name:"Sam Murray",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1407,date:"15/11/2025",name:"Jay Garcia",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:"paid comparison"},
+{id:1408,date:"15/11/2025",name:"Harry Lamey",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1409,date:"15/12/2025",name:"Albie Kelly",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1410,date:"15/12/2025",name:"Dan Sayer",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1411,date:"15/12/2025",name:"Brad Oates",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1412,date:"15/12/2025",name:"Connor Mitchell",trainer:"",service:"premium",qty:1,total:0,paid:"Yes",status:"Done",source:"Walk-in",notes:"FREE"},
+{id:1413,date:"15/12/2025",name:"Bil Karby",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1414,date:"15/12/2025",name:"C.Del",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1415,date:"15/12/2025",name:"AK",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1416,date:"15/12/2025",name:"Henry Tutton",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1417,date:"15/12/2025",name:"Ryleigh",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:"Monzo"},
+{id:1418,date:"15/12/2025",name:"Michael Mbonzo",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1419,date:"15/12/2025",name:"Wayde",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1420,date:"15/12/2025",name:"Patsy",trainer:"",service:"ultimate",qty:7,total:210,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1421,date:"15/12/2025",name:"Ben (Charlie\'s barber)",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1422,date:"15/12/2025",name:"Martin Ward",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1423,date:"15/01/2026",name:"Sam Bridge",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1424,date:"15/01/2026",name:"Reilly (Sam\'s mate)",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1425,date:"15/01/2026",name:"Joe Palmer",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1426,date:"15/01/2026",name:"Liam Polston",trainer:"",service:"ultimate",qty:1,total:50,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1427,date:"15/01/2026",name:"Ricky (watch guy)",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1428,date:"15/01/2026",name:"Liam Polston",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1429,date:"15/01/2026",name:"Casey Edwards",trainer:"",service:"ultimate",qty:1,total:40,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1430,date:"15/02/2026",name:"Joey",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1431,date:"15/02/2026",name:"Ryan",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1432,date:"15/02/2026",name:"Richie",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"5x pairs"},
+{id:1433,date:"15/02/2026",name:"5 a side guy",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1434,date:"15/02/2026",name:"Brad Oates",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:"comp bank"},
+{id:1435,date:"15/02/2026",name:"Elias",trainer:"",service:"ultimate",qty:1,total:50,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1436,date:"15/02/2026",name:"Danny Nesbitt",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1437,date:"15/03/2026",name:"Michael",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1438,date:"15/03/2026",name:"Lenny",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1439,date:"15/03/2026",name:"Joanne",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1440,date:"15/03/2026",name:"Callum Sewell",trainer:"",service:"ultimate",qty:1,total:60,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1441,date:"15/03/2026",name:"Frankie Harrison",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1442,date:"15/03/2026",name:"Luke Phillips",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1443,date:"15/03/2026",name:"TEE1up",trainer:"",service:"ultimate",qty:1,total:75,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1444,date:"15/04/2026",name:"Joanna Mate",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Referral",notes:""},
+{id:1445,date:"15/04/2026",name:"Kim Crowhurst",trainer:"",service:"premium",qty:1,total:20,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1446,date:"15/04/2026",name:"Danny Nesbitt",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1447,date:"15/04/2026",name:"Lewis Christie",trainer:"",service:"ultimate",qty:6,total:165,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1448,date:"15/04/2026",name:"Danny Nesbitt",trainer:"",service:"premium",qty:1,total:25,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1449,date:"15/04/2026",name:"Louie Seaman",trainer:"",service:"ultimate",qty:4,total:115,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1450,date:"15/04/2026",name:"Callum Sewell",trainer:"",service:"ultimate",qty:1,total:40,paid:"No",status:"Done",source:"Walk-in",notes:"Frank Cash"},
+{id:1451,date:"15/04/2026",name:"emiliabrazaite",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1452,date:"15/04/2026",name:"sophwatersss",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Instagram",notes:"Instagram"},
+{id:1453,date:"15/04/2026",name:"Sarah Squibb",trainer:"",service:"premium",qty:1,total:25,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1454,date:"15/05/2026",name:"Adam Brazanga",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1455,date:"15/05/2026",name:"Molly Surridge",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1456,date:"15/05/2026",name:"Case",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:"comparison"},
+{id:1457,date:"15/05/2026",name:"Glen",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:"comparison"},
+{id:1458,date:"15/05/2026",name:"Matt",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1459,date:"15/05/2026",name:"Stephen",trainer:"",service:"ultimate",qty:6,total:175,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1460,date:"15/05/2026",name:"Podge",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1461,date:"15/05/2026",name:"Reece Cosgrove",trainer:"",service:"premium",qty:1,total:0,paid:"No",status:"Done",source:"Walk-in",notes:"amount unknown"},
+{id:1462,date:"15/05/2026",name:"Tom",trainer:"",service:"premium",qty:1,total:20,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1463,date:"15/05/2026",name:"Frankie Stringer",trainer:"",service:"ultimate",qty:1,total:80,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1464,date:"15/05/2026",name:"Josh Edwards",trainer:"",service:"luxury",qty:1,total:30,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1465,date:"15/05/2026",name:"Brad Oates",trainer:"",service:"luxury",qty:1,total:30,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1466,date:"15/05/2026",name:"Bill Karby",trainer:"",service:"ultimate",qty:1,total:55,paid:"Yes",status:"Done",source:"Walk-in",notes:""},
+{id:1467,date:"15/06/2026",name:"George Bulmer",trainer:"",service:"ultimate",qty:1,total:75,paid:"No",status:"Done",source:"Walk-in",notes:""},
+{id:1468,date:"15/06/2026",name:"Tyler Mora Pitta",trainer:"",service:"ultimate",qty:3,total:100,paid:"No",status:"Done",source:"Walk-in",notes:""}
+];
+let DATA=JSON.parse(localStorage.getItem(KEY)||'null');
+if(!DATA){DATA=SEED_DATA;localStorage.setItem(KEY,JSON.stringify(DATA));}
+let TARGETS=JSON.parse(localStorage.getItem(KEY+'_targets')||'{}');
+
+function save(){localStorage.setItem(KEY,JSON.stringify(DATA));localStorage.setItem(KEY+'_targets',JSON.stringify(TARGETS));}
+function parseD(s){const[d,m,y]=s.split('/');return new Date(+y,+m-1,+d);}
+function fmtD(s){try{return parseD(s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'});}catch{return s;}}
+function moKey(s){return parseD(s).toLocaleDateString('en-GB',{month:'long',year:'numeric'});}
+function moOrd(s){const d=parseD(s);return d.getFullYear()*100+d.getMonth();}
+function todayStr(){const d=new Date();return[String(d.getDate()).padStart(2,'0'),String(d.getMonth()+1).padStart(2,'0'),d.getFullYear()].join('/');}
+function thisMonthKey(){return new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'});}
+function svcById(id){return SERVICES.find(s=>s.id===id)||{name:id,price:0,color:'',desc:''};}
+
+function getMonthGroups(){
+  const mm={};
+  DATA.forEach(function(j){
+    try{const k=moKey(j.date),o=moOrd(j.date);if(!mm[k])mm[k]={ord:o,jobs:[]};mm[k].jobs.push(j);}catch(e){}
+  });
+  return Object.values(mm).sort(function(a,b){return a.ord-b.ord;});
+}
+
+function calcMonth(jobs){
+  const pairs=jobs.reduce(function(a,j){return a+(+j.qty||1);},0);
+  const rev=jobs.reduce(function(a,j){return a+(+j.total||0);},0);
+  const svcCount={};
+  jobs.forEach(function(j){svcCount[j.service]=(svcCount[j.service]||0)+(+j.qty||1);});
+  return{pairs,rev,collected:rev,pending:0,jobs:jobs.length,svcCount};
+}
+
+function goTab(id){
+  document.querySelectorAll('.tab').forEach(function(el,i){el.classList.toggle('on',['dash','jobs','monthly','report'][i]===id);});
+  document.querySelectorAll('.pg').forEach(function(el){el.classList.toggle('on',el.id==='pg-'+id);});
+  render(id);
+}
+
+function render(tab){
+  if(tab==='dash')renderDash();
+  else if(tab==='jobs')renderJobs();
+  else if(tab==='monthly')renderMonthly();
+  else if(tab==='report')renderReport();
+  updateTopbar();
+}
+
+function updateTopbar(){
+  const pairs=DATA.reduce(function(a,j){return a+(+j.qty||1);},0);
+  const rev=DATA.reduce(function(a,j){return a+(+j.total||0);},0);
+  document.getElementById('topbar-stats').textContent=pairs+' pairs · £'+rev.toLocaleString()+' revenue';
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+function renderDash(){
+  const el=document.getElementById('pg-dash');
+  const allPairs=DATA.reduce(function(a,j){return a+(+j.qty||1);},0);
+  const allRev=DATA.reduce(function(a,j){return a+(+j.total||0);},0);
+  const avgJob=DATA.length?Math.round(allRev/DATA.length):0;
+  const avgPairVal=allPairs?Math.round(allRev/allPairs):0;
+
+  // This month
+  const tmk=thisMonthKey();
+  const tmJobs=DATA.filter(function(j){try{return moKey(j.date)===tmk;}catch{return false;}});
+  const tm=calcMonth(tmJobs);
+  const tmTarget=TARGETS[tmk]||0;
+
+  // Service breakdown all time
+  const svcTotals={};
+  DATA.forEach(function(j){svcTotals[j.service]=(svcTotals[j.service]||0)+(+j.qty||1);});
+  const maxSvc=Math.max.apply(null,Object.values(svcTotals).concat([1]));
+
+  // Month groups for trend
+  const months=getMonthGroups();
+  const last6=months.slice(-6);
+
+  var html='';
+  html+='<div class="kpi-row">';
+  html+='<div class="kpi accent"><div class="kpi-label">Total pairs cleaned</div><div class="kpi-val lime">'+allPairs+'</div><div class="kpi-sub">all time</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Total revenue</div><div class="kpi-val green">£'+allRev.toLocaleString()+'</div><div class="kpi-sub">all time</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Avg per pair</div><div class="kpi-val">£'+avgPairVal+'</div><div class="kpi-sub">avg job value £'+avgJob+'</div></div>';
+  html+='</div>';
+
+  html+='<div class="kpi-row-3">';
+  html+='<div class="kpi"><div class="kpi-label">This month — pairs</div><div class="kpi-val lime">'+tm.pairs+'</div>';
+  if(tmTarget>0){
+    const pct=Math.min(100,Math.round(tm.pairs/tmTarget*100));
+    html+='<div class="target-bar"><div class="target-fill" style="width:'+pct+'%"></div><span class="target-label">'+pct+'% of '+tmTarget+' target</span></div>';
+  }
+  html+='<div class="kpi-sub">£'+tm.rev.toLocaleString()+' revenue</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">This month — revenue</div><div class="kpi-val green">£'+tm.rev.toLocaleString()+'</div><div class="kpi-sub">'+tm.jobs+' jobs logged</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">This month — jobs</div><div class="kpi-val">'+tm.jobs+'</div><div class="kpi-sub">jobs logged</div></div>';
+  html+='</div>';
+
+  html+='<div class="row2">';
+  html+='<div class="card"><div class="card-title">Pairs per month</div>';
+  last6.forEach(function(mo){
+    const mc=calcMonth(mo.jobs);
+    const w=allPairs?Math.round(mc.pairs/Math.max.apply(null,last6.map(function(m){return calcMonth(m.jobs).pairs;}).concat([1]))*100):0;
+    html+='<div class="bar-row"><span class="bar-lbl">'+mo.jobs[0].date.slice(3,10)+'</span><div class="bar-outer"><div class="bar-inner bar-lime" style="width:'+w+'%"></div></div><span class="bar-val">'+mc.pairs+' pairs</span></div>';
+  });
+  html+='</div>';
+
+  html+='<div class="card"><div class="card-title">Revenue per month</div>';
+  const maxRev=Math.max.apply(null,last6.map(function(m){return calcMonth(m.jobs).rev;}).concat([1]));
+  last6.forEach(function(mo){
+    const mc=calcMonth(mo.jobs);
+    const w=Math.round(mc.rev/maxRev*100);
+    html+='<div class="bar-row"><span class="bar-lbl">'+mo.jobs[0].date.slice(3,10)+'</span><div class="bar-outer"><div class="bar-inner bar-green" style="width:'+w+'%"></div></div><span class="bar-val">£'+mc.rev.toLocaleString()+'</span></div>';
+  });
+  html+='</div></div>';
+
+  html+='<div class="card"><div class="card-title">Service breakdown (all time)</div>';
+  SERVICES.forEach(function(svc){
+    const count=svcTotals[svc.id]||0;
+    const w=Math.round(count/maxSvc*100);
+    html+='<div class="bar-row"><span class="bar-lbl">'+svc.name.replace(' Clean','')+'</span><div class="bar-outer"><div class="bar-inner bar-lime" style="width:'+w+'%"></div></div><span class="bar-val" style="width:70px">'+count+' pairs · £'+svc.price*count+'</span></div>';
+  });
+  html+='</div>';
+
+  el.innerHTML=html;
+}
+
+// ── JOB LOG ────────────────────────────────────────────────────────────────
+let selectedService='';
+
+function selectService(id){
+  selectedService=id;
+  document.querySelectorAll('.svc-pill').forEach(function(el){
+    el.classList.toggle('selected',el.dataset.id===id);
+  });
+  // Auto-fill price
+  const svc=svcById(id);
+  const qtyEl=document.getElementById('j-qty');
+  const qty=qtyEl?+qtyEl.value||1:1;
+  const totalEl=document.getElementById('j-total');
+  if(totalEl)totalEl.value=svc.price*qty;
+}
+
+function updateTotal(){
+  if(!selectedService)return;
+  const svc=svcById(selectedService);
+  const qty=+(document.getElementById('j-qty')||{value:1}).value||1;
+  const totalEl=document.getElementById('j-total');
+  if(totalEl)totalEl.value=svc.price*qty;
+}
+
+function renderJobs(){
+  const el=document.getElementById('pg-jobs');
+  const q=(document.getElementById('jq')||{value:''}).value||'';
+  const sf=(document.getElementById('jsvc')||{value:''}).value||'';
+
+  var html='';
+  html+='<div class="card" style="margin-bottom:14px">';
+  html+='<div class="card-title">Log a new job</div>';
+  html+='<div class="svc-grid">';
+  SERVICES.forEach(function(svc){
+    html+='<div class="svc-pill'+(selectedService===svc.id?' selected':'')+'" data-id="'+svc.id+'" onclick="selectService(\''+svc.id+'\')">';
+    html+='<div class="svc-name">'+svc.name+'</div>';
+    html+='<div class="svc-price">£'+svc.price+'</div>';
+    html+='<div style="font-size:9px;color:var(--muted);margin-top:2px">'+svc.desc+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  html+='<div class="form-grid">';
+  html+='<div><label>Date</label><input id="j-date" placeholder="DD/MM/YYYY" value="'+todayStr()+'"/></div>';
+  html+='<div><label>Customer name</label><input id="j-name" placeholder="e.g. Jordan Smith"/></div>';
+  html+='<div><label>Trainer brand / model</label><input id="j-trainer" placeholder="e.g. Nike Air Force 1"/></div>';
+  html+='<div><label>Qty (pairs)</label><input id="j-qty" type="number" value="1" min="1" oninput="updateTotal()"/></div>';
+  html+='<div><label>Total (£)</label><input id="j-total" type="number" placeholder="auto-fills"/></div>';
+
+  html+='<div><label>Status</label><select id="j-status"><option value="Done">Done</option><option value="In Progress">In Progress</option></select></div>';
+  html+='<div><label>Source</label><select id="j-source"><option value="Instagram">Instagram DM</option><option value="Referral">Referral</option><option value="Repeat">Repeat customer</option><option value="Walk-in">Walk-in</option><option value="Other">Other</option></select></div>';
+  html+='</div>';
+  html+='<div class="form-grid" style="margin-bottom:12px"><div style="grid-column:1/-1"><label>Notes</label><input id="j-notes" placeholder="Any extra notes..."/></div></div>';
+  html+='<button class="btn btn-primary" onclick="addJob()">+ Log job</button>';
+  html+='</div>';
+
+  html+='<div class="filter-row">';
+  html+='<input id="jq" placeholder="Search customer..." value="'+q+'" oninput="renderJobs()" style="width:160px"/>';
+  html+='<select id="jsvc" onchange="renderJobs()"><option value="">All services</option>';
+  SERVICES.forEach(function(s){html+='<option value="'+s.id+'"'+(sf===s.id?' selected':'')+'>'+s.name+'</option>';});
+  html+='</select>';
+  html+='<span style="font-size:11px;color:var(--muted)">'+DATA.length+' jobs logged</span>';
+  html+='</div>';
+
+  var filtered=DATA.filter(function(j){
+    if(q&&!j.name.toLowerCase().includes(q.toLowerCase())&&!j.trainer.toLowerCase().includes(q.toLowerCase()))return false;
+    if(sf&&j.service!==sf)return false;
+    return true;
+  }).slice().sort(function(a,b){return parseD(b.date)-parseD(a.date);});
+
+  if(!filtered.length){html+='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">No jobs found. Log your first one above.</div>';el.innerHTML=html;return;}
+
+  // Group by month
+  const days={};
+  filtered.forEach(function(j){days[j.date]=(days[j.date]||[]).concat(j);});
+  const dateKeys=Object.keys(days).sort(function(a,b){return parseD(b)-parseD(a);});
+
+  html+='<div class="card"><div class="tbl-wrap"><table>';
+  html+='<thead><tr><th>Date</th><th>Customer</th><th>Trainer</th><th>Service</th><th>Qty</th><th>Total</th><th>Source</th><th>Notes</th><th></th></tr></thead><tbody>';
+
+  filtered.forEach(function(j){
+      const svc=svcById(j.service);
+      html+='<tr class="dr">';
+      html+='<td style="font-size:11px">'+fmtD(j.date)+'</td>';
+      html+='<td style="font-weight:600;font-size:12px">'+j.name+'</td>';
+      html+='<td style="font-size:11px;color:var(--muted)">'+j.trainer+'</td>';
+      html+='<td><span class="badge '+svc.color+'">'+svc.name+'</span></td>';
+      html+='<td style="font-family:var(--mono)">'+j.qty+'</td>';
+      html+='<td style="font-weight:600;color:var(--accent);font-family:var(--mono)">£'+Number(j.total).toLocaleString()+'</td>';
+      html+='<td style="font-size:11px;color:var(--muted)">'+j.source+'</td>';
+      html+='<td style="font-size:11px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(j.notes||'—')+'</td>';
+      html+='<td><button class="btn-xs" onclick="delJob('+j.id+')">del</button></td>';
+      html+='</tr>';
+  });
+  html+='</tbody></table></div></div>';
+  el.innerHTML=html;
+}
+
+function addJob(){
+  if(!selectedService){alert('Select a service first.');return;}
+  const date=document.getElementById('j-date').value.trim();
+  const name=document.getElementById('j-name').value.trim();
+  if(!name||!date){alert('Name and date are required.');return;}
+  const qty=+(document.getElementById('j-qty').value)||1;
+  const svc=svcById(selectedService);
+  const total=parseFloat(document.getElementById('j-total').value)||svc.price*qty;
+  DATA.unshift({
+    id:Date.now(),date,name,
+    trainer:document.getElementById('j-trainer').value,
+    service:selectedService,qty,total,
+    paid:'Yes',
+    status:document.getElementById('j-status').value,
+    source:document.getElementById('j-source').value,
+    notes:document.getElementById('j-notes').value
+  });
+  save();selectedService='';renderJobs();updateTopbar();
+}
+
+function delJob(id){
+  if(!confirm('Delete this job?'))return;
+  DATA=DATA.filter(function(j){return j.id!==id;});
+  save();renderJobs();updateTopbar();
+}
+
+// ── MONTHLY TABLE ──────────────────────────────────────────────────────────
+function renderMonthly(){
+  const el=document.getElementById('pg-monthly');
+  const months=getMonthGroups();
+  const allPairs=DATA.reduce(function(a,j){return a+(+j.qty||1);},0);
+  const allRev=DATA.reduce(function(a,j){return a+(+j.total||0);},0);
+
+  var html='';
+  html+='<div class="kpi-row">';
+  html+='<div class="kpi accent"><div class="kpi-label">All-time pairs</div><div class="kpi-val lime">'+allPairs+'</div><div class="kpi-sub">across all months</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">All-time revenue</div><div class="kpi-val green">£'+allRev.toLocaleString()+'</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Avg pairs / month</div><div class="kpi-val">'+Math.round(allPairs/(months.length||1))+'</div><div class="kpi-sub">across '+months.length+' months</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">Avg revenue / month</div><div class="kpi-val lime">£'+Math.round(allRev/(months.length||1)).toLocaleString()+'</div></div>';
+  html+='</div>';
+
+  // Monthly target setter
+  html+='<div class="card">';
+  html+='<div class="card-title">Set monthly pair targets</div>';
+  html+='<div class="form-grid">';
+  html+='<div><label>Month (e.g. June 2026)</label><input id="t-mo" placeholder="June 2026"/></div>';
+  html+='<div><label>Target (pairs)</label><input id="t-val" type="number" placeholder="e.g. 30"/></div>';
+  html+='<div style="display:flex;align-items:flex-end"><button class="btn btn-primary" onclick="setTarget()" style="width:100%">Set target</button></div>';
+  html+='</div></div>';
+
+  html+='<div class="card"><div class="tbl-wrap"><table>';
+  html+='<thead><tr><th>Month</th><th>Jobs</th><th>Pairs</th><th>Target</th><th>vs Target</th><th>Revenue</th><th>Avg/pair</th><th>Top service</th></tr></thead><tbody>';
+
+  months.slice().reverse().forEach(function(mo,i){
+    const mc=calcMonth(mo.jobs);
+    const mk=mo.jobs[0]?moKey(mo.jobs[0].date):'';
+    const target=TARGETS[mk]||0;
+    const vs=target>0?mc.pairs-target:null;
+    const topSvc=Object.entries(mc.svcCount).sort(function(a,b){return b[1]-a[1];})[0];
+    const topSvcName=topSvc?svcById(topSvc[0]).name:'—';
+    const avg=mc.pairs?Math.round(mc.rev/mc.pairs):0;
+    html+='<tr class="dr" style="'+(i%2?'background:#ffffff03':'')+'">';
+    html+='<td style="font-weight:600">'+mk+'</td>';
+    html+='<td>'+mc.jobs+'</td>';
+    html+='<td style="font-weight:600;color:var(--accent);font-family:var(--mono)">'+mc.pairs+'</td>';
+    html+='<td style="font-family:var(--mono);color:var(--muted)">'+(target>0?target:'—')+'</td>';
+    html+='<td>';
+    if(vs!==null)html+='<span style="font-weight:600;color:'+(vs>=0?'var(--green)':'var(--red)')+';">'+(vs>=0?'+':'')+vs+'</span>';
+    else html+='<span style="color:var(--muted)">no target</span>';
+    html+='</td>';
+    html+='<td style="color:var(--accent);font-weight:600;font-family:var(--mono)">£'+mc.rev.toLocaleString()+'</td>';
+    html+='<td style="font-family:var(--mono)">£'+avg+'</td>';
+    html+='<td style="font-size:11px;color:var(--muted)">'+topSvcName+'</td>';
+    html+='</tr>';
+    // Target progress bar in next row if target set
+    if(target>0){
+      const pct=Math.min(100,Math.round(mc.pairs/target*100));
+      html+='<tr style="'+(i%2?'background:#ffffff03':'')+'"><td colspan="10" style="padding:4px 10px 8px 10px">';
+      html+='<div class="target-bar" style="height:14px"><div class="target-fill" style="width:'+pct+'%"></div><span class="target-label">'+pct+'%</span></div>';
+      html+='</td></tr>';
+    }
+  });
+
+  // Totals
+  html+='<tr class="tot-row">';
+  html+='<td>All-time</td><td>'+DATA.length+'</td>';
+  html+='<td style="color:var(--accent)">'+allPairs+'</td>';
+  html+='<td>—</td><td>—</td>';
+  html+='<td style="color:var(--green)">£'+allRev.toLocaleString()+'</td>';
+  html+='<td>£'+Math.round(allRev/(allPairs||1))+'</td><td>—</td></tr>';
+  html+='</tbody></table></div></div>';
+  el.innerHTML=html;
+}
+
+function setTarget(){
+  const mo=document.getElementById('t-mo').value.trim();
+  const val=+(document.getElementById('t-val').value)||0;
+  if(!mo||!val){alert('Fill in both fields.');return;}
+  TARGETS[mo]=val;save();renderMonthly();
+}
+
+// ── MONTHLY REPORT ─────────────────────────────────────────────────────────
+let reportMoIdx=-1;
+
+function renderReport(){
+  const el=document.getElementById('pg-report');
+  const months=getMonthGroups();
+  if(!months.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No jobs logged yet.</div>';return;}
+  if(reportMoIdx<0)reportMoIdx=months.length-1;
+  if(reportMoIdx>=months.length)reportMoIdx=months.length-1;
+
+  const mo=months[reportMoIdx];
+  const mc=calcMonth(mo.jobs);
+  const mk=mo.jobs[0]?moKey(mo.jobs[0].date):'';
+  const target=TARGETS[mk]||0;
+
+  // Previous month comparison
+  const prevMo=months[reportMoIdx-1];
+  const prevMc=prevMo?calcMonth(prevMo.jobs):null;
+  const pairsDiff=prevMc?mc.pairs-prevMc.pairs:null;
+  const revDiff=prevMc?mc.rev-prevMc.rev:null;
+
+  // Service breakdown
+  const svcRows=SERVICES.map(function(svc){
+    const count=mc.svcCount[svc.id]||0;
+    return{svc,count,rev:count*svc.price};
+  }).sort(function(a,b){return b.count-a.count;});
+
+  // Source breakdown
+  const srcCount={};
+  mo.jobs.forEach(function(j){srcCount[j.source]=(srcCount[j.source]||0)+(+j.qty||1);});
+
+  // Top trainers
+  const trainerCount={};
+  mo.jobs.forEach(function(j){if(j.trainer)trainerCount[j.trainer]=(trainerCount[j.trainer]||0)+(+j.qty||1);});
+  const topTrainers=Object.entries(trainerCount).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+
+  // Generate insights
+  const insights=[];
+  if(pairsDiff!==null){
+    if(pairsDiff>0)insights.push({type:'good',text:'Pairs are up <strong>'+pairsDiff+' vs last month</strong> ('+prevMc.pairs+' → '+mc.pairs+'). Keep the momentum going.'});
+    else if(pairsDiff<0)insights.push({type:'bad',text:'Pairs are down <strong>'+Math.abs(pairsDiff)+' vs last month</strong> ('+prevMc.pairs+' → '+mc.pairs+'). Push harder on Instagram DMs and ask for referrals from every job you complete.'});
+    else insights.push({type:'',text:'Same number of pairs as last month. A consistent base — now push to grow it.'});
+  }
+  if(target>0){
+    const gap=target-mc.pairs;
+    if(gap>0)insights.push({type:'warn',text:'You\'re <strong>'+gap+' pairs short</strong> of your '+target+' pair target this month. To hit it, you need to be more aggressive with your follow-ups and posting frequency.'});
+    else insights.push({type:'good',text:'Target hit — <strong>'+mc.pairs+' of '+target+' pairs</strong>. Consider raising the target next month.'});
+  }
+  const topSvcEntry=svcRows[0];
+  if(topSvcEntry&&topSvcEntry.count>0)insights.push({type:'',text:'<strong>'+topSvcEntry.svc.name+'</strong> is your most popular service this month ('+topSvcEntry.count+' pairs). If you\'re not already upselling from Premium to Luxury, start — it\'s an extra £5 per pair.'});
+  const instagramPairs=srcCount['Instagram']||0;
+  if(instagramPairs>0){
+    const instaPct=Math.round(instagramPairs/mc.pairs*100);
+    if(instaPct>60)insights.push({type:'good',text:'<strong>'+instaPct+'% of pairs came from Instagram</strong>. Your content is working — double down on posting before/after transformations consistently.'});
+    else insights.push({type:'warn',text:'Only <strong>'+instaPct+'% from Instagram</strong>. Your content should be generating more inbound. Post more transformation content — before/afters convert better than anything else.'});
+  }
+  if(mc.pending>0)insights.push({type:'warn',text:'<strong>£'+mc.pending.toLocaleString()+' still outstanding</strong> in unpaid jobs. Chase these this week — don\'t let payment collection slip.'});
+  const referralPairs=srcCount['Referral']||0;
+  if(referralPairs===0)insights.push({type:'warn',text:'Zero referrals logged this month. After every completed job, ask the customer — "do you have any friends with trainers that need cleaning?" A referral ask takes 10 seconds and costs nothing.'});
+  else insights.push({type:'good',text:'<strong>'+referralPairs+' pairs from referrals</strong> this month. Referrals are free leads — keep asking every single customer.'});
+
+  var html='';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
+  html+='<div>';
+  html+='<div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Monthly wrap-up report</div>';
+  html+='<div style="font-size:20px;font-weight:600">'+mk+'</div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:8px">';
+  html+='<button class="btn-sm" onclick="reportMoIdx=Math.max(0,reportMoIdx-1);renderReport()">← Prev</button>';
+  html+='<button class="btn-sm" onclick="reportMoIdx=Math.min(getMonthGroups().length-1,reportMoIdx+1);renderReport()">Next →</button>';
+  html+='</div></div>';
+
+  // Top stats
+  html+='<div class="kpi-row">';
+  html+='<div class="kpi accent"><div class="kpi-label">Pairs this month</div><div class="kpi-val lime">'+mc.pairs+'</div>';
+  if(target>0)html+='<div class="kpi-sub">target: '+target+(mc.pairs>=target?' ✓':' ('+Math.round(mc.pairs/target*100)+'%)')+'</div>';
+  html+='</div>';
+  html+='<div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-val green">£'+mc.rev.toLocaleString()+'</div><div class="kpi-sub">'+mc.jobs+' jobs</div></div>';
+  html+='<div class="kpi"><div class="kpi-label">vs last month (pairs)</div>';
+  if(pairsDiff!==null)html+='<div class="kpi-val '+(pairsDiff>=0?'green':'red')+'">'+(pairsDiff>=0?'+':'')+pairsDiff+'</div>';
+  else html+='<div class="kpi-val" style="color:var(--muted)">—</div>';
+  html+='</div>';
+  html+='<div class="kpi"><div class="kpi-label">Avg per pair</div><div class="kpi-val">£'+Math.round(mc.rev/(mc.pairs||1))+'</div></div>';
+  html+='</div>';
+
+  // Service breakdown
+  html+='<div class="row2">';
+  html+='<div class="card"><div class="card-title">Service breakdown</div>';
+  const maxSvcCount=Math.max.apply(null,svcRows.map(function(r){return r.count;}).concat([1]));
+  svcRows.forEach(function(r){
+    const w=Math.round(r.count/maxSvcCount*100);
+    html+='<div class="bar-row"><span class="bar-lbl">'+r.svc.name.replace(' Clean','')+'</span><div class="bar-outer"><div class="bar-inner bar-lime" style="width:'+w+'%"></div></div><span class="bar-val" style="width:80px">'+r.count+' · £'+r.rev+'</span></div>';
+  });
+  html+='</div>';
+
+  html+='<div class="card"><div class="card-title">Customer sources</div>';
+  const maxSrc=Math.max.apply(null,Object.values(srcCount).concat([1]));
+  Object.entries(srcCount).sort(function(a,b){return b[1]-a[1];}).forEach(function(entry){
+    const w=Math.round(entry[1]/maxSrc*100);
+    html+='<div class="bar-row"><span class="bar-lbl">'+entry[0]+'</span><div class="bar-outer"><div class="bar-inner bar-green" style="width:'+w+'%"></div></div><span class="bar-val">'+entry[1]+' pairs</span></div>';
+  });
+  html+='</div></div>';
+
+  // All jobs this month
+  html+='<div class="card"><div class="card-title">All jobs this month</div><div class="tbl-wrap"><table>';
+  html+='<thead><tr><th>Date</th><th>Customer</th><th>Trainer</th><th>Service</th><th>Qty</th><th>Total</th><th>Source</th></tr></thead><tbody>';
+  mo.jobs.slice().sort(function(a,b){return parseD(b.date)-parseD(a.date);}).forEach(function(j){
+    const svc=svcById(j.service);
+    html+='<tr class="dr">';
+    html+='<td style="font-size:11px">'+fmtD(j.date)+'</td>';
+    html+='<td style="font-weight:600">'+j.name+'</td>';
+    html+='<td style="font-size:11px;color:var(--muted)">'+j.trainer+'</td>';
+    html+='<td><span class="badge '+svc.color+'">'+svc.name+'</span></td>';
+    html+='<td>'+j.qty+'</td>';
+    html+='<td style="color:var(--accent);font-family:var(--mono)">£'+Number(j.total)+'</td>';
+    html+='<td style="font-size:11px;color:var(--muted)">'+j.source+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div></div>';
+
+  // Insights
+  html+='<div class="card"><div class="card-title">What to improve next month</div>';
+  insights.forEach(function(ins){
+    html+='<div class="insight'+(ins.type?' '+ins.type:'')+'" style="margin-bottom:8px">'+ins.text+'</div>';
+  });
+  html+='</div>';
+
+  el.innerHTML=html;
+}
+
+render('dash');
+</script>
+</body>
+</html>
